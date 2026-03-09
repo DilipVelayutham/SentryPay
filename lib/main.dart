@@ -461,8 +461,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   quickAction(Icons.send, "Send"),
                   quickAction(Icons.receipt_long, "Bills"),
-                  quickAction(Icons.request_page, "Requests"),
-                  quickAction(Icons.savings, "Savings"),
+                  quickAction(Icons.request_page, "Request"),
+                  quickAction(Icons.account_balance, "Bank Transfer"),
                 ],
               ),
 
@@ -482,7 +482,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 itemCount: people.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
-                  mainAxisSpacing: 15,
+                  mainAxisSpacing: 5,
                   crossAxisSpacing: 15,
                 ),
                 itemBuilder: (context,index){
@@ -506,7 +506,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 itemCount: businesses.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
-                  mainAxisSpacing: 10,
+                  mainAxisSpacing: 5,
                   crossAxisSpacing: 15,
                 ),
                 itemBuilder: (context,index){
