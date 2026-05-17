@@ -721,6 +721,9 @@ bool faceDetected = false;
   bool isCameraInitialized = false;
   bool verified = false;
 
+  bool eyesWereOpen = false;
+bool blinkDetected = false;
+
   @override
 void initState() {
   super.initState();
@@ -757,6 +760,7 @@ void initState() {
         isCameraInitialized = true;
       });
      detectFace();
+     startTimeout();
 
   
 
@@ -765,6 +769,51 @@ void initState() {
       debugPrint("Camera Error: $e");
     }
   }
+  void startTimeout() {
+
+  Future.delayed(
+    const Duration(seconds: 10),
+    () {
+
+      if (!verified) {
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+
+          builder: (_) => AlertDialog(
+
+            title: const Text("Verification Failed"),
+
+            content: const Text(
+              "Blink not detected within 10 seconds.",
+            ),
+
+            actions: [
+
+              TextButton(
+
+                onPressed: () {
+
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DashboardPage(),
+                    ),
+                    (route) => false,
+                  );
+
+                },
+
+                child: const Text("OK"),
+              )
+            ],
+          ),
+        );
+      }
+    },
+  );
+}
 Future<void> detectFace() async {
 
   if (detecting || verified) return;
@@ -784,38 +833,89 @@ Future<void> detectFace() async {
 
     if (faces.isNotEmpty) {
 
-  faceDetected = true;
+        faceDetected = true;
+      final face = faces.first;
 
-  await Future.delayed(
-    const Duration(seconds: 4),
-  );
+      final leftEye =
+          face.leftEyeOpenProbability ?? 1.0;
 
-  if (!mounted) return;
+      final rightEye =
+          face.rightEyeOpenProbability ?? 1.0;
+      debugPrint(
+  "Left Eye: $leftEye | Right Eye: $rightEye",
+);
 
-  setState(() {
-    verified = true;
-  });
+      /// EYES OPEN
+      if (leftEye > 0.5 && rightEye > 0.5) {
 
-  Future.delayed(
-    const Duration(seconds: 1),
-    () {
+        eyesWereOpen = true;
+      }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SuccessPage(
-            amount: widget.amount,
-            amountValue:
-                double.parse(widget.amount),
+      /// BLINK DETECTED
+      if (eyesWereOpen &&
+          leftEye < 0.5 &&
+          rightEye < 0.5) {
+
+        blinkDetected = true;
+
+        if (!mounted) return;
+
+        setState(() {
+          verified = true;
+        });
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+
+          builder: (_) => AlertDialog(
+
+            title: const Text("Success"),
+
+            content: const Text(
+              "Blink Verification Successful",
+            ),
+
+            actions: [
+
+              TextButton(
+
+                onPressed: () {
+
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SuccessPage(
+                        amount: widget.amount,
+                        amountValue:
+                            double.parse(widget.amount),
+                      ),
+                    ),
+                    (route) => false,
+                  );
+
+                },
+
+                child: const Text("OK"),
+              )
+            ],
           ),
-        ),
+        );
+
+        return;
+      }
+
+      /// KEEP CHECKING
+      Future.delayed(
+        const Duration(milliseconds: 700),
+        detectFace,
       );
 
-    },
-  );
+    } else {
 
-} else {
-
+      /// NO FACE
+      /// faceDetected = false;
+      faceDetected = false;
       Future.delayed(
         const Duration(seconds: 1),
         detectFace,
@@ -868,7 +968,9 @@ void dispose() {
                       Text(
                         verified
                             ? "✔ Blink Verification Done Successfully"
-                            : "Blink Verification in Progress...",
+                            : faceDetected
+    ? "Blink your eyes to continue..."
+    : "Show your face to camera...",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
