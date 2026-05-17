@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 double walletBalance = 15890.74;
 
@@ -12,13 +14,20 @@ class FraudLog {
     required this.reason,
     required this.riskScore,
     required this.time,
-  });
+  }); 
 }
 
 /// GLOBAL LIST
 List<FraudLog> fraudHistory = [];
 
-void main() {
+late List<CameraDescription> cameras;
+
+Future<void> main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  cameras = await availableCameras();
+
   runApp(const SentryPayApp());
 }
 
@@ -49,7 +58,13 @@ class ScanPage extends StatefulWidget {
 class _ScanPageState extends State<ScanPage> {
 
   bool isScanned = false;
-
+   final MobileScannerController controller =
+      MobileScannerController();
+      @override
+void dispose() {
+  controller.dispose();
+  super.dispose();
+}
   @override
   Widget build(BuildContext context) {
 
@@ -59,7 +74,8 @@ class _ScanPageState extends State<ScanPage> {
 
           /// CAMERA
           MobileScanner(
-            onDetect: (BarcodeCapture capture) {
+            controller: controller,
+            onDetect: (BarcodeCapture capture) async {
 
               if (isScanned) return;
               isScanned = true;
@@ -69,6 +85,11 @@ class _ScanPageState extends State<ScanPage> {
                 final String? code = barcode.rawValue;
 
                 if (code != null) {
+                  await controller.stop();
+                controller.dispose();
+                await Future.delayed(
+                  const Duration(milliseconds: 500),
+                    );    
 
                   Navigator.push(
                     context,
@@ -677,11 +698,14 @@ class _UpiPinPageState extends State<UpiPinPage> {
     );
   }
 }
-
 class LivenessPage extends StatefulWidget {
+
   final String amount;
 
-  const LivenessPage({super.key, required this.amount});
+  const LivenessPage({
+    super.key,
+    required this.amount,
+  });
 
   @override
   State<LivenessPage> createState() => _LivenessPageState();
@@ -689,67 +713,183 @@ class LivenessPage extends StatefulWidget {
 
 class _LivenessPageState extends State<LivenessPage> {
 
+  CameraController? cameraController;
+  late FaceDetector faceDetector;
+
+bool detecting = false;
+bool faceDetected = false;
+  bool isCameraInitialized = false;
   bool verified = false;
+
+  @override
+void initState() {
+  super.initState();
+
+  faceDetector = FaceDetector(
+    options: FaceDetectorOptions(
+      enableClassification: true,
+    ),
+  );
+
+  initCamera();
+}
+
+  Future<void> initCamera() async {
+
+    try {
+
+      final frontCamera = cameras.firstWhere(
+        (camera) =>
+            camera.lensDirection == CameraLensDirection.front,
+      );
+
+      cameraController = CameraController(
+        frontCamera,
+        ResolutionPreset.low,
+        enableAudio: false,
+      );
+
+      await cameraController!.initialize();
+
+      if (!mounted) return;
+
+      setState(() {
+        isCameraInitialized = true;
+      });
+     detectFace();
+
+  
+
+    } catch (e) {
+ 
+      debugPrint("Camera Error: $e");
+    }
+  }
+Future<void> detectFace() async {
+
+  if (detecting || verified) return;
+
+  detecting = true;
+
+  try {
+
+    final image =
+        await cameraController!.takePicture();
+
+    final inputImage =
+        InputImage.fromFilePath(image.path);
+
+    final faces =
+        await faceDetector.processImage(inputImage);
+
+    if (faces.isNotEmpty) {
+
+  faceDetected = true;
+
+  await Future.delayed(
+    const Duration(seconds: 4),
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    verified = true;
+  });
+
+  Future.delayed(
+    const Duration(seconds: 1),
+    () {
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SuccessPage(
+            amount: widget.amount,
+            amountValue:
+                double.parse(widget.amount),
+          ),
+        ),
+      );
+
+    },
+  );
+
+} else {
+
+      Future.delayed(
+        const Duration(seconds: 1),
+        detectFace,
+      );
+    }
+
+  } catch (e) {
+
+    debugPrint("Face Detection Error: $e");
+  }
+
+  detecting = false;
+}
+  @override
+void dispose() {
+
+  cameraController?.dispose();
+  faceDetector.close();
+
+  super.dispose();
+}
+
+
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
+
       appBar: AppBar(
-        title: const Text("Liveness Check"),
+        title: const Text("Liveness Verification"),
         backgroundColor: Colors.green,
       ),
 
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+      body: isCameraInitialized
 
-            const Icon(Icons.face, size: 80, color: Colors.green),
+          ? Column(
+              children: [
 
-            const SizedBox(height: 20),
-
-            const Text(
-              "Blink your eyes to verify",
-              style: TextStyle(fontSize: 18),
-            ),
-
-            const SizedBox(height: 30),
-
-            ElevatedButton(
-              onPressed: () {
-
-                setState(() {
-                  verified = true;
-                });
-
-                Future.delayed(const Duration(seconds: 1), () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          SuccessPage(
-                            amount: widget.amount,
-                            amountValue: double.parse(widget.amount),
-                        ),
-                    ),
-                  );
-                });
-              },
-              child: const Text("Simulate Blink"),
-            ),
-
-            if (verified)
-              const Padding(
-                padding: EdgeInsets.only(top: 20),
-                child: Text(
-                  "✔ Verified",
-                  style: TextStyle(color: Colors.green),
+                Expanded(
+                  child: CameraPreview(cameraController!),
                 ),
-              )
-          ],
-        ),
-      ),
+
+                Container(
+                  padding: const EdgeInsets.all(20),
+
+                  child: Column(
+                    children: [
+
+                      Text(
+                        verified
+                            ? "✔ Blink Verification Done Successfully"
+                            : "Blink Verification in Progress...",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: verified
+                              ? Colors.green
+                              : Colors.black,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                     
+                    ],
+                  ),
+                ),
+              ],
+            )
+
+          : const Center(
+              child: CircularProgressIndicator(),
+            ),
     );
   }
 }
@@ -787,6 +927,7 @@ class _SuccessPageState extends State<SuccessPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            
 
             const Icon(Icons.check_circle, color: Colors.white, size: 80),
 
@@ -801,8 +942,42 @@ class _SuccessPageState extends State<SuccessPage> {
 
             Text(
               "₹${widget.amount} sent",
+              
               style: const TextStyle(color: Colors.white70, fontSize: 18),
             ),
+            const SizedBox(height: 30),
+
+SizedBox(
+  width: 200,
+
+  child: ElevatedButton(
+
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      padding: const EdgeInsets.all(15),
+    ),
+
+    onPressed: () {
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const DashboardPage(),
+        ),
+        (route) => false,
+      );
+
+    },
+
+    child: const Text(
+      "OK",
+      style: TextStyle(
+        color: Colors.green,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
           ],
         ),
       ),
