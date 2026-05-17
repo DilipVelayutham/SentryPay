@@ -834,6 +834,9 @@ Future<void> detectFace() async {
     if (faces.isNotEmpty) {
 
         faceDetected = true;
+        await Future.delayed(
+  const Duration(milliseconds: 300),
+);
       final face = faces.first;
 
       final leftEye =
@@ -846,15 +849,15 @@ Future<void> detectFace() async {
 );
 
       /// EYES OPEN
-      if (leftEye > 0.5 && rightEye > 0.5) {
+      if (leftEye > 0.4 && rightEye > 0.4) {
 
         eyesWereOpen = true;
       }
 
       /// BLINK DETECTED
       if (eyesWereOpen &&
-          leftEye < 0.5 &&
-          rightEye < 0.5) {
+          leftEye < 0.7 &&
+          rightEye < 0.7) {
 
         blinkDetected = true;
 
