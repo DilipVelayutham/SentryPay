@@ -722,7 +722,13 @@ bool faceDetected = false;
   bool verified = false;
 
   bool eyesWereOpen = false;
-bool blinkDetected = false;
+
+
+bool timeoutOccurred = false;
+
+int attemptCount = 1;
+
+bool dialogShowing = false;
 
   @override
 void initState() {
@@ -769,54 +775,111 @@ void initState() {
       debugPrint("Camera Error: $e");
     }
   }
-  void startTimeout() {
+ void startTimeout() {
+
+  timeoutOccurred = false;
 
   Future.delayed(
     const Duration(seconds: 10),
     () {
 
-      if (!verified) {
+      if (!verified && !dialogShowing) {
 
-        showDialog(
-          context: context,
-          barrierDismissible: false,
+        timeoutOccurred = true;
+        dialogShowing = true;
 
-          builder: (_) => AlertDialog(
+        /// ATTEMPTS LEFT
+        if (attemptCount < 3) {
 
-            title: const Text("Verification Failed"),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
 
-            content: const Text(
-              "Blink not detected within 10 seconds.",
+            builder: (_) => AlertDialog(
+
+              title: const Text("Verification Failed"),
+
+              content: Text(
+                "Blink not detected.\n\nAttempt $attemptCount of 3",
+              ),
+
+              actions: [
+
+                TextButton(
+
+                  onPressed: () {
+
+                    Navigator.pop(context);
+
+                    /// RESET VALUES
+                    eyesWereOpen = false;
+                   
+                    timeoutOccurred = false;
+                    dialogShowing = false;
+
+                    attemptCount++;
+
+                    detectFace();
+                    startTimeout();
+                  },
+
+                  child: const Text("Retry"),
+                )
+              ],
             ),
+          );
 
-            actions: [
+        }
 
-              TextButton(
+        /// FINAL FAILURE
+        else {
 
-                onPressed: () {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
 
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DashboardPage(),
-                    ),
-                    (route) => false,
-                  );
+            builder: (_) => AlertDialog(
 
-                },
+              title: const Text("Payment Cancelled"),
 
-                child: const Text("OK"),
-              )
-            ],
-          ),
-        );
+              content: const Text(
+                "Blink verification failed 3 times.",
+              ),
+
+              actions: [
+
+                TextButton(
+
+                  onPressed: () {
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardPage(),
+                      ),
+                      (route) => false,
+                    );
+
+                  },
+
+                  child: const Text("OK"),
+                )
+              ],
+            ),
+          );
+        }
       }
     },
   );
 }
 Future<void> detectFace() async {
 
-  if (detecting || verified) return;
+  if (detecting ||
+    verified ||
+    timeoutOccurred ||
+    dialogShowing) {
+  return;
+}
 
   detecting = true;
 
@@ -849,68 +912,71 @@ Future<void> detectFace() async {
 );
 
       /// EYES OPEN
-      if (leftEye > 0.4 && rightEye > 0.4) {
+      if (leftEye > 0.5 && rightEye > 0.5) {
 
         eyesWereOpen = true;
       }
-
+if (timeoutOccurred) {
+  detecting = false;
+  return;
+}
       /// BLINK DETECTED
-      if (eyesWereOpen &&
-          leftEye < 0.7 &&
-          rightEye < 0.7) {
+     /// EYES CLOSED
+/// BLINK DETECTED
+if (eyesWereOpen &&
+    leftEye < 0.45 &&
+    rightEye < 0.45) {
 
-        blinkDetected = true;
+  if (!mounted) return;
 
-        if (!mounted) return;
+  setState(() {
+    verified = true;
+  });
 
-        setState(() {
-          verified = true;
-        });
+  showDialog(
+    context: context,
+    barrierDismissible: false,
 
-        showDialog(
-          context: context,
-          barrierDismissible: false,
+    builder: (_) => AlertDialog(
 
-          builder: (_) => AlertDialog(
+      title: const Text("Success"),
 
-            title: const Text("Success"),
+      content: const Text(
+        "Blink Verification Successful",
+      ),
 
-            content: const Text(
-              "Blink Verification Successful",
-            ),
+      actions: [
 
-            actions: [
+        TextButton(
 
-              TextButton(
+          onPressed: () {
 
-                onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SuccessPage(
+                  amount: widget.amount,
+                  amountValue:
+                      double.parse(widget.amount),
+                ),
+              ),
+              (route) => false,
+            );
 
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SuccessPage(
-                        amount: widget.amount,
-                        amountValue:
-                            double.parse(widget.amount),
-                      ),
-                    ),
-                    (route) => false,
-                  );
+          },
 
-                },
+          child: const Text("OK"),
+        )
+      ],
+    ),
+  );
 
-                child: const Text("OK"),
-              )
-            ],
-          ),
-        );
-
-        return;
-      }
-
+  detecting = false;
+  return;
+}
       /// KEEP CHECKING
       Future.delayed(
-        const Duration(milliseconds: 700),
+        const Duration(milliseconds: 400),
         detectFace,
       );
 
