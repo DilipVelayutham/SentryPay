@@ -1,0 +1,76 @@
+# =========================
+# Python cache
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Virtual environments
+# =========================
+venv/
+.venv/
+env/
+ENV/
+
+# =========================
+# Trained AI model files
+# =========================
+model/
+models/
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+
+# =========================
+# Datasets
+# =========================
+datasets/
+dataset/
+data/
+
+*.csv
+*.parquet
+
+# =========================
+# Hugging Face cache
+# =========================
+.cache/
+huggingface/
+transformers_cache/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+*.env
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Build / temporary files
+# =========================
+build/
+dist/
+*.tmp
+*.temp

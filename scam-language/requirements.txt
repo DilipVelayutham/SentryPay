@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+transformers
+pandas
+scikit-learn
+tldextract
+sentencepiece
+python-multipart

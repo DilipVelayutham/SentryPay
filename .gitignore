@@ -1,0 +1,113 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# AI model files
+# Scam language AI - large files
+scam-language/model/
+scam-language/models/
+scam-language/datasets/
+scam-language/dataset/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Large AI model files
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.h5
+
+# Dataset files
+*.csv
+*.parquet
+
+
+
+# Environment and secrets
+.env
+.env.*
+*.env
+
+# IDE
+.vscode/
+.idea/
+
+# Flutter generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Android generated/local
+android/.gradle/
+android/local.properties
+
+# iOS generated
+ios/Pods/
+ios/.symlinks/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
