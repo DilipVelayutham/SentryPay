@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "811962132574",
+    "project_id": "sentrypay-ac79b",
+    "storage_bucket": "sentrypay-ac79b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:811962132574:android:b2fa507ee8edcdd7cb2ccf",
+        "android_client_info": {
+          "package_name": "com.example.sentry_pay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlMU55d4Yw1Ble9JIU_oclpIrZlbwkep0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
